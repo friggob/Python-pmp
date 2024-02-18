@@ -3,9 +3,9 @@
 import os
 import argparse as argp
 import logging
-from playlist import PlayList
-from mpv import Mpv
-from cli import Cli
+from lib.playlist import PlayList
+from lib.mpv import Mpv
+from lib.cli import Cli
 
 def main():
   args   = parse_args_setup()

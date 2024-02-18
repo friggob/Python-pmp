@@ -2,7 +2,7 @@ import random
 import asyncio
 import json
 import logging
-from file import File
+from .file import File
 
 class PlayList(list):
   def __init__(self, files = None, init_states: dict = None):
