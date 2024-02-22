@@ -6,8 +6,7 @@ import logging
 from pmp.playlist import PlayList
 from pmp.mpv import Mpv
 from pmp.cli import Cli
-
-__version__ = "0.1.4"
+from pmp._version import __version__
 
 def main():
   logging.basicConfig(level = os.environ.get('LOGLEVEL', 'WARNING'))
