@@ -7,6 +7,8 @@ from pmp.playlist import PlayList
 from pmp.mpv import Mpv
 from pmp.cli import Cli
 
+__version__ = "0.1.4"
+
 def main():
   logging.basicConfig(level = os.environ.get('LOGLEVEL', 'WARNING'))
   logger = logging.getLogger('pmp')
@@ -113,6 +115,8 @@ def parse_args_setup():
                    help='Sets the audio language id')
   parser.add_argument('-a', '--no_autostart', action='store_true', default=False,
                    help='Do not automatically start playing')
+  parser.add_argument('-V', '--version', action='version', version=f'%(prog)s {__version__}',
+                   help='Show program version')
 
   return parser.parse_args()
 
