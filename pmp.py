@@ -3,11 +3,13 @@
 import os
 import argparse as argp
 import logging
-from lib.playlist import PlayList
-from lib.mpv import Mpv
-from lib.cli import Cli
+from pmp.playlist import PlayList
+from pmp.mpv import Mpv
+from pmp.cli import Cli
 
 def main():
+  logging.basicConfig(level = os.environ.get('LOGLEVEL', 'WARNING'))
+  logger = logging.getLogger('pmp')
   args   = parse_args_setup()
   player = player_setup(args)
 
@@ -115,6 +117,4 @@ def parse_args_setup():
   return parser.parse_args()
 
 if __name__ == '__main__':
-  logging.basicConfig(level = os.environ.get('LOGLEVEL', 'WARNING'))
-  logger = logging.getLogger('pmp')
   main()
