@@ -205,7 +205,7 @@ class Cli(Cmd):
 
     def default(self, arg):
         '''What to do if no defined action'''
-        num = int(arg.split(' ')[0]) if arg.split(' ')[0].isnumeric() else -1
+        num = int(arg.split(' ')[0]) if arg.split(' ')[0].isdecimal() else -1
         if num > -1 and num < len(self.playlist):
             self.playlist.list_position = num
             if len(arg) > 1 and arg.split(' ')[1][0] == 'p':
@@ -215,8 +215,7 @@ class Cli(Cmd):
         return False
 
     def play_next(self):
-        next_to_play = self.playlist.get_next_file()
-        if next_to_play is None:
+        if (next_to_play := self.playlist.get_next_file()) is None:
             print('No more files to play!')
             return True
         else:

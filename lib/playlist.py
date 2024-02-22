@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 from .file import File
+logger = logging.getLogger(__name__)
 
 class PlayList(list):
   def __init__(self, files = None, init_states: dict = None):
@@ -16,30 +17,32 @@ class PlayList(list):
 
   async def __init_playlist(self, files: list = None):
     file_list = []
-    if files is not None:
-      for filename in files:
-        try:
-          logging.debug(f'{filename=}')
-          file = await File.create_object(filename)
-        except ValueError as msg:
-          logging.debug(f'ValueError: {msg}')
-          pass
-        else:
-          if file.mime.split('/')[0] == 'text':
-            continue
-          if file.filename == '__savefile':
-            continue
-          if file.filename == '__pl.json':
-            file_list.extend(
-              await self.__init_playlist(self.import_json_playlist_file(file.fullpath))
-            )
-            self.randomize = False
-            continue
-          if any(x.fullpath == file.fullpath for x in file_list):
-            logging.info(f"'{filename}' already in playlist")
-            continue
-          if file.mime.split('/')[0] in {'audio', 'video', 'image'}:
-            file_list.append(file)
+    if files is None:
+      return None
+    
+    for filename in files:
+      try:
+        logger.debug(f'{filename=}')
+        file = await File.create_object(filename)
+      except ValueError as msg:
+        logger.debug(f'ValueError: {msg}')
+        pass
+      else:
+        if file.mime.split('/')[0] == 'text':
+          continue
+        if file.filename == '__savefile':
+          continue
+        if file.filename == '__pl.json':
+          file_list.extend(
+            await self.__init_playlist(self.import_json_playlist_file(file.fullpath))
+          )
+          self.randomize = False
+          continue
+        if any(x.fullpath == file.fullpath for x in file_list):
+          logger.info(f"'{filename}' already in playlist")
+          continue
+        if file.mime.split('/')[0] in {'audio', 'video', 'image'}:
+          file_list.append(file)
     return file_list
 
   def shuffle(self):
@@ -70,7 +73,7 @@ class PlayList(list):
       list_dict = json.load(file)
 
     if self.list_position == -1:
-      self.list_position = list_dict.get('next_to_play') if list_dict.get('next_to_play') else 0
+      self.list_position = (x := list_dict.get('next_to_play')) if x else 0
 
     for entry in list_dict.get('data'):
       file_list.append(entry.get('fullpath'))
@@ -86,7 +89,7 @@ class PlayList(list):
     else:
       path = file_path
 
-    logging.info('Saving playlist to file:', path)
+    logger.info('Saving playlist to file:', path)
 
     save_data = {}
     save_data['type'] = 'Fredriks playlist save file'

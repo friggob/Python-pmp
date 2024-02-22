@@ -21,7 +21,7 @@ class Mpv:
         return self.args.copy()
 
     def set_args(self, args: dict):
-        if args and args is not None:
+        if args:
             self.args.update(args)
 
     def play(self, file: str):

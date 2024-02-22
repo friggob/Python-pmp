@@ -116,5 +116,5 @@ def parse_args_setup():
 
 if __name__ == '__main__':
   logging.basicConfig(level = os.environ.get('LOGLEVEL', 'WARNING'))
-  
+  logger = logging.getLogger('pmp')
   main()
