@@ -97,7 +97,7 @@ def parse_args_setup():
   parser.add_argument('-s', '--stereo', action='store_true', default=False,
                    help='Force mpv to use stereo')
   parser.add_argument('-v', '--verbose', action='store_true', default=False,
-                   help='Be more verbose')
+                   help='Make player be more verbose')
   parser.add_argument('-#', '--start-at', default=-1, type=int,
                    help='Start playing at numbered position')
   parser.add_argument('-t', '--textfile', action='store_true', default=False,
