@@ -197,7 +197,7 @@ class Cli(Cmd):
         elif self.def_actions.get('move_files'):
             self._move_file('')
         if self.playlist.get_current_file():
-            self.play_next()
+            return self.play_next()
         else:
             self.move = False
             self.save = False
@@ -208,8 +208,10 @@ class Cli(Cmd):
         num = int(arg.split(' ')[0]) if arg.split(' ')[0].isdecimal() else -1
         if num > -1 and num < len(self.playlist):
             self.playlist.list_position = num
-            if len(arg) > 1 and arg.split(' ')[1][0] == 'p':
+            if len(arg.split(' ')) > 1 and arg.split(' ')[1][0] == 'p':
                 self.play_next()
+        elif num != -1:
+            print(f"No such index in playlist: {arg}")
         else:
             print(f"No such command: {arg}")
         return False
