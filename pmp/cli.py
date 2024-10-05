@@ -205,7 +205,7 @@ class Cli(Cmd):
 
     def default(self, arg):
         '''What to do if no defined action'''
-        num = int(arg.split(' ')[0]) if arg.split(' ')[0].isdecimal() else -1
+        num = int(arg.split(' ')[0]) if arg.split(' ')[0].lstrip('-+').isdecimal() else -1
         if num > -1 and num < len(self.playlist):
             self.playlist.list_position = num
             if len(arg.split(' ')) > 1 and arg.split(' ')[1][0] == 'p':
@@ -238,7 +238,7 @@ class Cli(Cmd):
                 self._delete()
             elif self.def_actions.get('move_files') and self.move:
                 self._move_file(None)
-        except FileNotFoundError:
+        except (FileNotFoundError, AttributeError):
             pass
         if self.def_actions.get('save_playlist') and self.save:
             self.do_s(None)
