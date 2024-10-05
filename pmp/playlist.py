@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 class PlayList(list):
   def __init__(self, files = None, init_states: dict = None):
     self.randomize     = init_states.get('randomize') if init_states is not None else False
-    self.list_position = init_states.get('start_pos', -1) if init_states is not None else -1
+    self.list_position = init_states.get('start_pos', None) if init_states is not None else None
     super().__init__(asyncio.run(self.__init_playlist(files)))
-    self.list_position = 0 if self.list_position < 0 else self.list_position
+    self.list_position = 0 if self.list_position is None else self.list_position
     
     if self.randomize:
       self.shuffle()
@@ -53,12 +53,15 @@ class PlayList(list):
     return self.copy()
 
   def get_current_file(self):
-    pos = self.list_position
-    return self[(pos - 1) if pos > 0 else pos] if self else None
+    assert self.list_position >= 0,\
+      f"list_position should never be negative ({self.list_position = })"
+    pos = self.list_position if self.list_position == 0 else (self.list_position - 1)
+    return self[pos]
 
   def remove(self, arg):
     super().remove(arg)
     self.list_position -= 1
+    assert self.list_position >= 0
 
   def get_next_file(self):
     if (self.list_position + 1) <= len(self):
@@ -72,16 +75,20 @@ class PlayList(list):
     with open(filename) as file:
       list_dict = json.load(file)
 
-    if self.list_position == -1:
-      self.list_position = (x := list_dict.get('next_to_play')) if x else 0
+    logger.debug(f'{self.list_position = }')
+    logger.debug(json.dumps(list_dict, indent=2))
+    if self.list_position is None:
+      self.list_position = list_dict.get('next_to_play', 0)
 
     for entry in list_dict.get('data'):
       file_list.append(entry.get('fullpath'))
 
+    logger.info(f'{self.list_position = }')
+
     return file_list
 
   def export_as_json(self):
-    return json.dumps([x.__dict__ for x in self])
+    return json.dumps([x.as_dict() for x in self])
 
   def save_list(self, file_path = None):
     if file_path is None or not file_path:
@@ -89,7 +96,7 @@ class PlayList(list):
     else:
       path = file_path
 
-    logger.info('Saving playlist to file:', path)
+    logger.info(f'Saving playlist to file: {path}')
 
     save_data = {}
     save_data['type'] = 'Fredriks playlist save file'

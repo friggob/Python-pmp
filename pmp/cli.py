@@ -66,6 +66,7 @@ class Cli(Cmd):
     def do_r(self, arg):
         '''Replay file'''
         self.playlist.list_position -= 1
+        assert self.playlist.list_position >= 0
         self.play_next()
 
     def do_z(self, arg):
@@ -221,7 +222,7 @@ class Cli(Cmd):
             print('No more files to play!')
             return True
         else:
-            print(f'Playing #{self.playlist.list_position - 1}, "{next_to_play.filename}"')
+            print(f'Playing #{self.playlist.index(next_to_play)}, "{next_to_play.filename}"')
             print()
             self.player.play(next_to_play.fullpath)
 

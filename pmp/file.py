@@ -41,3 +41,12 @@ class File(Path):
       'Mime-type': str(self.mime)
     }
     return json.dumps(details, indent=2)
+
+  def as_dict(self):
+    return {
+      'fullpath': str(self.fullpath),
+      'filename': str(self.filename),
+      'dirname': str(self.dirname),
+      'relpath': str(self.relpath),
+      'mime': str(self.mime)
+    }
