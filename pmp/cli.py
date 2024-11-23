@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from cmd import Cmd
+import logging
+logger = logging.getLogger(__name__)
 
 class Cli(Cmd):
     prompt = 'Do? '
@@ -198,11 +200,11 @@ class Cli(Cmd):
         elif self.def_actions.get('move_files'):
             self._move_file('')
         if self.playlist.get_current_file():
-            return self.play_next()
+            logger.info(f"{self.playlist.get_current_file().filename=}")
         else:
             self.move = False
             self.save = False
-            return True
+        return self.play_next()
 
     def default(self, arg):
         '''What to do if no defined action'''

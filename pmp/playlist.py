@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 class PlayList(list):
   def __init__(self, files = None, init_states: dict = None):
-    self.randomize     = init_states.get('randomize') if init_states is not None else False
-    self.list_position = init_states.get('start_pos', None) if init_states is not None else None
+    self.randomize     = init_states.get('randomize') if init_states else False
+    self.list_position = init_states.get('start_pos', None) if init_states else None
     super().__init__(asyncio.run(self.__init_playlist(files)))
     self.list_position = 0 if self.list_position is None else self.list_position
     
@@ -55,8 +55,11 @@ class PlayList(list):
   def get_current_file(self):
     assert self.list_position >= 0,\
       f"list_position should never be negative ({self.list_position = })"
-    pos = self.list_position if self.list_position == 0 else (self.list_position - 1)
-    return self[pos]
+    if self:
+      pos = self.list_position if self.list_position == 0 else (self.list_position - 1)
+      return self[pos]
+    else:
+      return None
 
   def remove(self, arg):
     super().remove(arg)
