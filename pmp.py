@@ -39,7 +39,8 @@ def main():
   try:
     prompt.cmdloop()
   except KeyboardInterrupt:
-    print()
+    prompt.do_EOF(None)
+    prompt.postloop()
 
 def get_files(args):
   if not args.textfile:

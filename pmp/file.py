@@ -28,9 +28,9 @@ class File(Path):
 
   @classmethod
   async def create_object(cls, path):
-    f = cls(path)
-    await f._mime()
-    return f
+    obj = cls(path)
+    await obj._mime()
+    return obj
 
   def details(self):
     details = {

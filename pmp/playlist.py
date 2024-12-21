@@ -1,113 +1,145 @@
-import random
 import asyncio
-import json
 import logging
+import random
+import json
 from .file import File
+
 logger = logging.getLogger(__name__)
 
 class PlayList(list):
   def __init__(self, files = None, init_states: dict = None):
-    self.randomize     = init_states.get('randomize') if init_states else False
-    self.list_position = init_states.get('start_pos', None) if init_states else None
+    self.init_states   = init_states or {}
+    self.start_pos     = self.init_states.get('start_pos') or 0
+    self.randomize     = self.init_states.get('randomize', False)
+    logger.debug(f'{init_states=}')
+
     super().__init__(asyncio.run(self.__init_playlist(files)))
-    self.list_position = 0 if self.list_position is None else self.list_position
-    
+
     if self.randomize:
       self.shuffle()
-
-  async def __init_playlist(self, files: list = None):
-    file_list = []
-    if files is None:
-      return None
+      
+    self._set_start_files()
     
-    for filename in files:
-      try:
-        logger.debug(f'{filename=}')
-        file = await File.create_object(filename)
-      except ValueError as msg:
-        logger.debug(f'ValueError: {msg}')
-        pass
-      else:
-        if file.mime.split('/')[0] == 'text':
-          continue
-        if file.filename == '__savefile':
-          continue
-        if file.filename == '__pl.json':
-          file_list.extend(
-            await self.__init_playlist(self.import_json_playlist_file(file.fullpath))
-          )
-          self.randomize = False
-          continue
-        if any(x.fullpath == file.fullpath for x in file_list):
-          logger.info(f"'{filename}' already in playlist")
-          continue
-        if file.mime.split('/')[0] in {'audio', 'video', 'image'}:
-          file_list.append(file)
-    return file_list
+  def _set_start_files(self):
+    if len(self) <= 0 or self.start_pos > len(self):
+      self._next_file     = None
+      self._previous_file = None
+    else:
+      self._next_file     = None if self.start_pos == len(self) else self[self.start_pos]
+      self._previous_file = None if self.start_pos == 0 else self[self.start_pos - 1]
 
   def shuffle(self):
-    self.list_position = 0
     random.shuffle(self)
+    self.start_pos = 0
+    self._set_start_files()
+    
+  def get_previous_index(self):
+    return None if self._previous_file is None else self.index(self._previous_file)
 
-  def get_list(self):
-    return self.copy()
+  def get_next_index(self):
+    return None if self._next_file is None else self.index(self._next_file)
+
+  def replay(self):
+    self.start_pos = self.get_previous_index()
+    self._set_start_files()
+  
+  def remove(self, item):
+    index = self.get_previous_index()
+    if index == 0 or index is None:
+      self._previous_file = None
+      index = 0
+    else:
+      self._previous_file = self[index - 1]
+    super().remove(item)
+    self._next_file = self[index] if len(self) > 0 else None
+    logger.debug(f'remove(): {index=} {self._next_file=} {self._previous_file=}')
+
+  def sort(self, *args, **kwargs):
+    super().sort(*args, **kwargs)
+    self.start_pos = 0
+    self._set_start_files()
+
+  @property
+  def current_file(self):
+    return self.get_current_file()
+
+  @property
+  def next_file(self):
+    return self._next_file
 
   def get_current_file(self):
-    assert self.list_position >= 0,\
-      f"list_position should never be negative ({self.list_position = })"
-    if self:
-      pos = self.list_position if self.list_position == 0 else (self.list_position - 1)
-      return self[pos]
-    else:
-      return None
+    return self._previous_file or self._next_file
 
-  def remove(self, arg):
-    super().remove(arg)
-    self.list_position -= 1
-    assert self.list_position >= 0
+  def set_current_file(self, index):
+    self.start_pos = index
+    self._set_start_files()
 
   def get_next_file(self):
-    if (self.list_position + 1) <= len(self):
-      self.list_position += 1
-      return self[self.list_position - 1]
-    else:
-      return None
-  
-  def import_json_playlist_file(self, filename):
-    file_list = []
-    with open(filename) as file:
-      list_dict = json.load(file)
+    index = (len(self) - 1) if self.get_next_index() is None else self.get_next_index()
+    logger.debug(f"get_next_file(): {index=}")
+    self._previous_file = self._next_file
+    self._next_file = None if (index + 1) >= len(self) else self[index + 1]
 
-    logger.debug(f'{self.list_position = }')
-    logger.debug(json.dumps(list_dict, indent=2))
-    if self.list_position is None:
-      self.list_position = list_dict.get('next_to_play', 0)
-
-    for entry in list_dict.get('data'):
-      file_list.append(entry.get('fullpath'))
-
-    logger.info(f'{self.list_position = }')
-
-    return file_list
+    return self._previous_file
 
   def export_as_json(self):
     return json.dumps([x.as_dict() for x in self])
 
   def save_list(self, file_path = None):
-    if file_path is None or not file_path:
-      path = '__pl.json'
-    else:
-      path = file_path
+    path = file_path if file_path else '__pl.json'
 
-    logger.info(f'Saving playlist to file: {path}')
+    logger.info(f"Saving playlist to file: {path}")
 
     save_data = {}
-    save_data['type'] = 'Fredriks playlist save file'
-    save_data['next_to_play'] = self.list_position
-    try:
-      save_data['next_filename'] = self[self.list_position].filename
-    except IndexError:
-      pass
-
+    save_data['type'] = "Fredriks playlist save file"
+    save_data['next_to_play'] = self.get_next_index() or (len(self) - 1)
+    save_data['next_filename'] = self._next_file.filename or ""
     save_data['data'] = json.loads(self.export_as_json())
     json.dump(save_data, open(path, 'w'), indent=2)
+
+  def import_json_playlist(self, filename):
+    file_list = list()
+    with open(filename) as file:
+      list_dict = json.load(file)
+
+    logger.debug(json.dumps(list_dict, indent=2))
+
+    print(list_dict.get("next_to_play"))
+    self.start_pos = list_dict.get("next_to_play", 0)
+    
+    for entry in list_dict.get('data'):
+      file_list.append(entry.get("fullpath"))
+
+    return file_list
+
+  async def __init_playlist(self, files: list = None):
+    list_of_files = []
+
+    if not files:
+      return list_of_files
+    
+    for filename in files:
+      try:
+        file = await File.create_object(filename)
+      except ValueError as msg:
+        logger.debug(msg)
+      else:
+        logger.info(file.mime)
+        mime = file.mime.split("/")
+
+        if mime[0] ==  "text" or file.filename == '__savefile':
+          continue
+        if file.filename == '__pl.json' and mime[1] == 'json':
+          logger.info("JSON playlist file!")
+          list_of_files.extend(
+            await self.__init_playlist(self.import_json_playlist(file.fullpath))
+          )
+          self.randomize = False
+          continue
+        if any(x.fullpath == file.fullpath for x in list_of_files):
+          logger.info(f"'{filename}' already in playlist")
+          continue
+        if mime[0] in ('audio', 'video'):
+          list_of_files.append(file)
+          
+    return list_of_files.copy()
