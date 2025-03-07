@@ -164,6 +164,7 @@ class Cli(Cmd):
       return True
     else:
       logger.debug(f'play_next(): {next_to_play}')
+      print('-'*20)
       print(f"Playing #{self.playlist.index(next_to_play)}, '{next_to_play.filename}'")
       print()
       self.player.play(next_to_play.fullpath)
