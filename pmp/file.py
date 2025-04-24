@@ -7,7 +7,7 @@ from mimetypes import guess_type
 async def get_mime_type(filename):
   mime_type = guess_type(filename)[0]
   #mime_type = None
-  if mime_type is None or mime_type.split('/')[0] == 'text':
+  if mime_type is None or mime_type.split('/')[0] == 'text' or mime_type.split('/')[0] == 'model':
     mime_type = magic.detect_from_filename(filename).mime_type
   return mime_type
 
