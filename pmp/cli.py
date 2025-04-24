@@ -150,7 +150,7 @@ class Cli(Cmd):
 
   def do_details(self, _):
     """Show details of current file"""
-    print(self.playlist.current_file.details())
+    print(self.playlist.get_current().details())
 
   def do_EOF(self, _):
     self.move = False
@@ -159,7 +159,7 @@ class Cli(Cmd):
     return True
 
   def play_next(self):
-    if (next_to_play := self.playlist.get_next_file()) is None:
+    if (next_to_play := self.playlist.get_next()) is None:
       print("No more files to play!")
       return True
     else:
@@ -176,7 +176,7 @@ class Cli(Cmd):
       self._move_file(".delete")
 
   def _move_file(self, dest = None, postfix = ""):
-    current_file = self.playlist.current_file
+    current_file = self.playlist.get_current()
     filename     = current_file.filename + postfix
     move_path    = dest or (self.default_actions.get("move_file_dir") or "sett")
     dest_dir     = Path(move_path)
@@ -205,7 +205,7 @@ class Cli(Cmd):
       print(f"Moving {relpath} -> {dest_dir}")
       print("-----------")
       src.rename(dest_path)
-      self.playlist.remove(current_file)
+      self.playlist.remove()
       
   def emptyline(self):
     if self.default_actions.get("move_delete"):
@@ -214,11 +214,11 @@ class Cli(Cmd):
     elif self.default_actions.get("move_files"):
       logger.info(f'Automatically move files to move directory')
       self._move_file()
-    if self.playlist.next_file:
-      logger.info(f"{self.playlist.next_file=}")
-    else:
-      self.move = False
-      self.save = False
+    # if self.playlist.get_next():
+    #   logger.info(f"{self.playlist.get_current()=}")
+    # else:
+    #   self.move = False
+    #   self.save = False
     return self.play_next()
 
   def default(self, arg):
@@ -230,7 +230,7 @@ class Cli(Cmd):
     num = int(farg) if farg.lstrip("-+").isdecimal() else -1
     logger.info(f"{num=}")
     if num > -1 and num < len(self.playlist):
-      self.playlist.set_current_file(num)
+      self.playlist.set_current(num)
       if len(args) > 1 and sarg[0] == "p":
         return self.play_next()
     elif num != -1:
